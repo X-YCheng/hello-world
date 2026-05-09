@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房间签到管理系统</title>
+    <style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#1e293b;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#334155;--text-light:#64748b;--green:#22c55e;--orange:#f97316;--yellow:#eab308;--red:#ef4444;--blue:#3b82f6}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+.container{max-width:1400px;margin:0 auto}
+.header{background:var(--primary);color:#fff;padding:16px 24px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:20px;font-weight:600}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:rgba(255,255,255,.15);color:#fff}.btn-secondary:hover{background:rgba(255,255,255,.25)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#16a34a}
+.btn-warning{background:var(--orange);color:#fff}.btn-warning:hover{background:#ea580c}
+.btn-outline{background:0 0;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{background:#f1f5f9}
+.btn-sm{padding:4px 10px;font-size:12px}
+.toolbar{background:var(--card);padding:12px 16px;border:1px solid var(--border);border-top:none;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.toolbar-group{display:flex;gap:8px;align-items:center}
+.toolbar-divider{width:1px;height:24px;background:var(--border)}
+.dropdown{position:relative}
+.dropdown-menu{position:absolute;top:100%;left:0;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);min-width:180px;z-index:100;display:none}
+.dropdown-menu.show{display:block}
+.dropdown-item{padding:10px 16px;cursor:pointer;font-size:13px;transition:background .15s}
+.dropdown-item:first-child{border-radius:8px 8px 0 0}.dropdown-item:last-child{border-radius:0 0 8px 8px}.dropdown-item:hover{background:#f1f5f9}
+.main-table{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:#f1f5f9;font-weight:600;font-size:13px;color:var(--text-light);white-space:nowrap;position:sticky;top:0}
+tr:last-child td{border-bottom:none}tr:hover td{background:#f8fafc}tr.selected td{background:#eff6ff}
+td{font-size:13px}
+.checkbox-cell{width:40px;text-align:center}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.editable{cursor:pointer;padding:4px 8px;border-radius:4px;transition:background .15s;display:inline-block;min-width:60px}.editable:hover{background:#e2e8f0}
+.editable-input{padding:4px 8px;border:2px solid var(--blue);border-radius:4px;font-size:13px;width:120px;outline:0}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.status-signed{background:#dcfce7;color:#166534}.status-tomorrow{background:#ffedd5;color:#9a3412}.status-dayafter{background:#fef9c3;color:#854d0e}.status-overdue{background:#fee2e2;color:#991b1b}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-signed .status-dot{background:var(--green)}.status-tomorrow .status-dot{background:var(--orange)}.status-dayafter .status-dot{background:var(--yellow)}.status-overdue .status-dot{background:var(--red)}
+.context-menu{position:fixed;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:1000;min-width:160px;display:none;padding:4px 0}
+.context-menu.show{display:block}
+.context-item{padding:10px 16px;cursor:pointer;font-size:13px;transition:background .15s}.context-item:hover{background:#f1f5f9}.context-item.danger{color:var(--red)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:1000}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:500px;width:90%;max-height:90vh;overflow:auto}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:16px;font-weight:600}
+.modal-close{background:0;border:none;font-size:24px;cursor:pointer;color:var(--text-light);line-height:1}.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px}.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--text-light)}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{outline:0;border-color:var(--blue)}
+.empty-state{padding:60px 20px;text-align:center;color:var(--text-light)}.empty-state p{margin-bottom:16px}
+.stats-bar{background:var(--card);border:1px solid var(--border);border-top:none;padding:12px 16px;display:flex;gap:24px;font-size:13px;flex-wrap:wrap}
+.stat-item{display:flex;align-items:center;gap:8px}
+.stat-label{color:var(--text-light)}.stat-value{font-weight:600}
+.history-panel{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:12px}
+.history-item{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between}
+.history-item:last-child{border-bottom:none}.history-item:nth-child(even){background:#fafafa}
+.toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;background:var(--primary);color:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+.legend{display:flex;gap:16px;font-size:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px}
+input[type=file]{display:none}
+.hidden{display:none!important}
+@media(max-width:768px){.header{justify-content:center}.toolbar{flex-direction:column;align-items:stretch}.toolbar-group{justify-content:center}.toolbar-divider{width:100%;height:1px}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>房间签到管理系统</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window._app.exportBackup()">完整备份</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importBackup').click()">恢复备份</button>
+            <input type="file" id="importBackup" accept=".json" onchange="window._app.importBackup(event)">
+        </div>
+    </div>
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <div class="dropdown">
+                <button class="btn btn-outline" onclick="toggleDropdown('batchMenu')">批量操作 ▾</button>
+                <div class="dropdown-menu" id="batchMenu">
+                    <div class="dropdown-item" onclick="openBatchSign()">今日批量签到</div>
+                    <div class="dropdown-item" onclick="openBatchUndo()">今日批量撤销</div>
+                    <div class="dropdown-item" onclick="openBatchChangeSigner()">批量修改签到人</div>
+                    <div class="dropdown-item" onclick="openBatchHistory()">批量设置历史签到</div>
+                </div>
+            </div>
+            <button class="btn btn-outline" onclick="openQuickQuery()">快速查询</button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+            <button class="btn btn-primary" onclick="openAddRoom()">+ 新增房间</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importCSV').click()">CSV导入</button>
+            <input type="file" id="importCSV" accept=".csv" onchange="importCSV(event)">
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+            <button class="btn btn-outline btn-sm" onclick="exportCSV('rooms')">导出房间状态</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV('checkins')">导出签到明细</button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="legend">
+            <div class="legend-item"><span class="status-dot" style="background:var(--green)"></span><span>已签到</span></div>
+            <div class="legend-item"><span class="status-dot" style="background:var(--orange)"></span><span>明天需签到</span></div>
+            <div class="legend-item"><span class="status-dot" style="background:var(--yellow)"></span><span>后天需签到</span></div>
+            <div class="legend-item"><span class="status-dot" style="background:var(--red)"></span><span>未签到</span></div>
+        </div>
+    </div>
+    <div class="stats-bar">
+        <div class="stat-item"><span class="stat-label">房间总数:</span><span class="stat-value" id="statTotal">0</span></div>
+        <div class="stat-item"><span class="stat-label">已签到:</span><span class="stat-value" id="statSigned" style="color:var(--green)">0</span></div>
+        <div class="stat-item"><span class="stat-label">明天需签到:</span><span class="stat-value" id="statTomorrow" style="color:var(--orange)">0</span></div>
+        <div class="stat-item"><span class="stat-label">后天需签到:</span><span class="stat-value" id="statDayAfter" style="color:var(--yellow)">0</span></div>
+        <div class="stat-item"><span class="stat-label">未签到:</span><span class="stat-value" id="statOverdue" style="color:var(--red)">0</span></div>
+        <div class="stat-item"><span class="stat-label">已选:</span><span class="stat-value" id="statSelected">0</span></div>
+    </div>
+    <div class="main-table">
+        <table>
+            <thead>
+                <tr>
+                    <th class="checkbox-cell"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th>房间名称</th><th>签到人</th><th>状态</th><th>距下次签到</th><th>下次签到日</th><th>最后签到</th><th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="roomTable"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState"><p>暂无房间数据</p><button class="btn btn-primary" onclick="openAddRoom()">新增第一个房间</button></div>
+    </div>
+</div>
+<div class="context-menu" id="contextMenu">
+    <div class="context-item" onclick="ctxAction('checkIn')">确认签到</div>
+    <div class="context-item" onclick="ctxAction('undoCheckIn')">撤销签到</div>
+    <div class="context-item" onclick="ctxAction('editSigner')">修改签到人</div>
+    <div class="context-item" onclick="ctxAction('viewHistory')">查看签到历史</div>
+    <div class="context-item" onclick="ctxAction('editName')">修改房间名称</div>
+    <div class="context-item danger" onclick="ctxAction('delete')">删除房间</div>
+</div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+    var DB_NAME='RoomCheckInDB',DB_VER=1;
+    var db=null;
+    var currentRooms=[];
+    var selectedIds=new Set();
+    var ctxRoomId=null;
+
+    function initDB(){
+        return new Promise(function(resolve,reject){
+            var req=indexedDB.open(DB_NAME,DB_VER);
+            req.onerror=function(){reject(req.error)};
+            req.onsuccess=function(){db=req.result;resolve(db)};
+            req.onupgradeneeded=function(e){
+                var database=e.target.result;
+                if(!database.objectStoreNames.contains('rooms')){
+                    var rs=database.createObjectStore('rooms',{keyPath:'id'});
+                    rs.createIndex('name','name',{unique:true});
+                    rs.createIndex('signer','signer',{unique:false});
+                }
+                if(!database.objectStoreNames.contains('checkins')){
+                    var cs=database.createObjectStore('checkins',{keyPath:'id'});
+                    cs.createIndex('roomId','roomId',{unique:false});
+                    cs.createIndex('checkInDate','checkInDate',{unique:false});
+                    cs.createIndex('roomDate',['roomId','checkInDate'],{unique:true});
+                }
+            };
+        });
+    }
+
+    function tx(stores,mode,cb){
+        var t=db.transaction(stores,mode||'readonly');
+        return cb(t);
+    }
+
+    function store(t,storeName){
+        return t.objectStore(storeName);
+    }
+
+    function genId(){
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/x/g,function(){
+            return Math.random()*16|0;
+        }).replace(/y/g,function(){
+            return Math.random()*4|8;
+        });
+    }
+
+    function fmtDate(d){
+        d=d instanceof Date?d:new Date(d);
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+
+    function today(){
+        return fmtDate(new Date());
+    }
+
+    function daysUntil(next){
+        var t=new Date();t.setHours(0,0,0,0);
+        var n=new Date(next);n.setHours(0,0,0,0);
+        return Math.ceil((n-t)/(86400000));
+    }
+
+    function statusInfo(d){
+        if(d>=14)return{cls:'status-signed',txt:'已签到',clr:'var(--green)'};
+        if(d===1)return{cls:'status-tomorrow',txt:'明天需签到',clr:'var(--orange)'};
+        if(d===2)return{cls:'status-dayafter',txt:'后天需签到',clr:'var(--yellow)'};
+        return{cls:'status-overdue',txt:(d>=0?'距'+d+'天':'逾期'+Math.abs(d)+'天'),clr:'var(--red)'};
+    }
+
+    function loadAll(){
+        tx(['rooms','checkins'],'readonly',function(t){
+            var rs=store(t,'rooms');
+            var cs=store(t,'checkins');
+            var rooms=[],checkins=[];
+            rs.getAll().onsuccess=function(e){rooms=e.target.result;tryFinish()};
+            cs.getAll().onsuccess=function(e){checkins=e.target.result;tryFinish()};
+            function tryFinish(){
+                if(rooms.length&&checkins.length!==undefined){
+                    var data=rooms.map(function(r){
+                        var myChecks=checkins.filter(function(c){return c.roomId===r.id}).sort(function(a,b){return b.checkInDate>a.checkInDate?1:-1});
+                        var last=myChecks[0]||null;
+                        var next;
+                        if(last){
+                            var d=new Date(last.checkInDate);d.setDate(d.getDate()+15);next=fmtDate(d);
+                        }else{
+                            var n=new Date();n.setDate(n.getDate()+15);next=fmtDate(n);
+                        }
+                        var du=daysUntil(next);
+                        var si=statusInfo(du);
+                        return{id:r.id,name:r.name,signer:r.signer,createdAt:r.createdAt,lastCheckIn:last?last.checkInDate:null,nextDate:next,daysUntil:du,cls:si.cls,txt:si.txt,clr:si.clr};
+                    });
+                    data.sort(function(a,b){return a.daysUntil-b.daysUntil});
+                    currentRooms=data;
+                    renderTable(data);
+                    updateStats(data);
+                }else if(!rooms.length){
+                    currentRooms=[];
+                    renderTable([]);
+                    updateStats([]);
+                }
+            }
+        });
+    }
+
+    function renderTable(data){
+        var tbody=document.getElementById('roomTable');
+        var empty=document.getElementById('emptyState');
+        if(!data.length){
+            tbody.innerHTML='';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        tbody.innerHTML=data.map(function(r){
+            var chk=selectedIds.has(r.id)?'checked':'';
+            var sel=selectedIds.has(r.id)?'selected':'';
+            var btn=r.daysUntil>=14?'btn-warning':'btn-success';
+            var btnTxt=r.daysUntil>=14?'撤销':'签到';
+            var daysTxt=r.daysUntil>=0?r.daysUntil+'天':'逾期'+Math.abs(r.daysUntil)+'天';
+            return'<tr data-id="'+r.id+'" class="'+sel+'">'+
+                '<td class="checkbox-cell"><input type="checkbox" '+chk+' onchange="toggleSelect(\''+r.id+'\')"></td>'+
+                '<td><span class="editable" ondblclick="startEdit(this,\''+r.id+'\',\'name\')">'+r.name+'</span></td>'+
+                '<td><span class="editable" ondblclick="startEdit(this,\''+r.id+'\',\'signer\')">'+r.signer+'</span></td>'+
+                '<td><span class="status-badge '+r.cls+'"><span class="status-dot" style="background:'+r.clr+'"></span>'+r.txt+'</span></td>'+
+                '<td>'+daysTxt+'</td>'+
+                '<td>'+r.nextDate+'</td>'+
+                '<td>'+(r.lastCheckIn||'-')+'</td>'+
+                '<td><button class="btn btn-sm '+btn+'" onclick="toggleCheckIn(\''+r.id+'\')">'+btnTxt+'</button></td>'+
+                '</tr>';
+        }).join('');
+    }
+
+    function updateStats(data){
+        var s={t:data.length,sig:0,to:0,da:0,ov:0};
+        data.forEach(function(r){
+            if(r.daysUntil>=14)s.sig++;
+            else if(r.daysUntil===1)s.to++;
+            else if(r.daysUntil===2)s.da++;
+            else s.ov++;
+        });
+        document.getElementById('statTotal').textContent=s.t;
+        document.getElementById('statSigned').textContent=s.sig;
+        document.getElementById('statTomorrow').textContent=s.to;
+        document.getElementById('statDayAfter').textContent=s.da;
+        document.getElementById('statOverdue').textContent=s.ov;
+        document.getElementById('statSelected').textContent=selectedIds.size;
+    }
+
+    function toggleSelect(id){
+        if(selectedIds.has(id))selectedIds.delete(id);
+        else selectedIds.add(id);
+        loadAll();
+    }
+
+    function toggleSelectAll(){
+        var chk=document.getElementById('selectAll').checked;
+        if(chk)currentRooms.forEach(function(r){selectedIds.add(r.id)});
+        else selectedIds.clear();
+        loadAll();
+    }
+
+    function toggleCheckIn(id){
+        tx(['rooms','checkins'],'readonly',function(t){
+            var cs=store(t,'checkins');
+            var idx=cs.index('roomId');
+            var req=idx.getAll(IDBKeyRange.only(id));
+            req.onsuccess=function(e){
+                var myChecks=e.target.result.sort(function(a,b){return b.checkInDate>a.checkInDate?1:-1});
+                var last=myChecks[0];
+                var td=today();
+                if(last&&last.checkInDate===td){
+                    tx(['checkins'],'readwrite',function(t2){
+                        store(t2,'checkins').delete(last.id).onsuccess=function(){
+                            toast('撤销签到成功','success');
+                            loadAll();
+                        };
+                    });
+                }else{
+                    tx(['checkins'],'readwrite',function(t2){
+                        var newRec={id:genId(),roomId:id,checkInDate:td,createdAt:Date.now()};
+                        store(t2,'checkins').add(newRec).onsuccess=function(){
+                            toast('签到成功','success');
+                            loadAll();
+                        };
+                    });
+                }
+            };
+        });
+    }
+
+    function checkInByDate(id,date){
+        return new Promise(function(resolve){
+            tx(['checkins'],'readonly',function(t){
+                var cs=store(t,'checkins');
+                var idx=cs.index('roomDate');
+                var req=idx.getAll(IDBKeyRange.only([id,date]));
+                req.onsuccess=function(e){
+                    var found=e.target.result[0];
+                    if(found){
+                        tx(['checkins'],'readwrite',function(t2){
+                            store(t2,'checkins').delete(found.id).onsuccess=function(){resolve(false)};
+                        });
+                    }else{
+                        tx(['checkins'],'readwrite',function(t2){
+                            var r={id:genId(),roomId:id,checkInDate:date,createdAt:Date.now()};
+                            store(t2,'checkins').add(r).onsuccess=function(){resolve(true)};
+                        });
+                    }
+                };
+            });
+        });
+    }
+
+    function startEdit(el,id,field){
+        var old=el.textContent;
+        var inp=document.createElement('input');
+        inp.type='text';inp.className='editable-input';inp.value=old;
+        el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
+        inp.onblur=function(){
+            var val=inp.value.trim();
+            if(val&&val!==old){
+                tx(['rooms'],'readwrite',function(t){
+                    var rs=store(t,'rooms');
+                    if(field==='name'){
+                        var idx=rs.index('name');
+                        var ex=idx.get(val);
+                        ex.onsuccess=function(){
+                            if(ex.result&&ex.result.id!==id){toast('房间名称已存在','error');inp.parentNode.replaceChild(el, inp);return}
+                            rs.get(id).onsuccess=function(e){
+                                var r=e.target.result;r.name=val;
+                                rs.put(r).onsuccess=function(){toast('修改成功','success');loadAll()};
+                            };
+                        };
+                    }else{
+                        rs.get(id).onsuccess=function(e){
+                            var r=e.target.result;r[field]=val;
+                            rs.put(r).onsuccess=function(){toast('修改成功','success');loadAll()};
+                        };
+                    }
+                });
+            }else{loadAll()}
+        };
+        inp.onkeydown=function(e){
+            if(e.key==='Enter')inp.blur();
+            if(e.key==='Escape'){inp.value=old;inp.blur()}
+        };
+    }
+
+    function toggleDropdown(id){
+        var m=document.getElementById(id);
+        var is=m.classList.contains('show');
+        document.querySelectorAll('.dropdown-menu').forEach(function(x){x.classList.remove('show')});
+        if(!is)m.classList.add('show');
+    }
+
+    document.addEventListener('click',function(e){
+        if(!e.target.closest('.dropdown'))document.querySelectorAll('.dropdown-menu').forEach(function(x){x.classList.remove('show')});
+    });
+
+    document.addEventListener('contextmenu',function(e){
+        var row=e.target.closest('tr');
+        if(row&&row.dataset.id){
+            e.preventDefault();
+            ctxRoomId=row.dataset.id;
+            var m=document.getElementById('contextMenu');
+            m.style.left=e.pageX+'px';m.style.top=e.pageY+'px';
+            m.classList.add('show');
+        }
+    });
+
+    document.addEventListener('click',function(e){
+        if(!e.target.closest('.context-menu'))document.getElementById('contextMenu').classList.remove('show');
+    });
+
+    function ctxAction(action){
+        var id=ctxRoomId;
+        document.getElementById('contextMenu').classList.remove('show');
+        switch(action){
+            case 'checkIn':toggleCheckIn(id);break;
+            case 'undoCheckIn':toggleCheckIn(id);break;
+            case 'editSigner':
+                getRoom(id,function(r){
+                    modal('修改签到人','<div class="form-group"><label>房间名称</label><input value="'+r.name+'" disabled></div><div class="form-group"><label>签到人</label><input id="ns" value="'+r.signer+'"></div>',
+                        function(){
+                            var v=document.getElementById('ns').value.trim();
+                            if(v)updateRoom(id,{signer:v},function(){toast('修改成功','success');loadAll()});
+                        });
+                });
+                break;
+            case 'editName':
+                getRoom(id,function(r){
+                    modal('修改房间名称','<div class="form-group"><label>房间名称</label><input id="nn" value="'+r.name+'"></div>',
+                        function(){
+                            var v=document.getElementById('nn').value.trim();
+                            if(v){
+                                getRoom(id,function(orig){
+                                    if(orig.name!==v){
+                                        tx(['rooms'],'readonly',function(t){
+                                            var idx=store(t,'rooms').index('name');
+                                            var ex=idx.get(v);
+                                            ex.onsuccess=function(){
+                                                if(ex.result&&ex.result.id!==id){toast('房间名称已存在','error');return}
+                                                updateRoom(id,{name:v},function(){toast('修改成功','success');loadAll()});
+                                            };
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                });
+                break;
+            case 'viewHistory':
+                getRoom(id,function(r){
+                    tx(['checkins'],'readonly',function(t){
+                        var idx=store(t,'checkins').index('roomId');
+                        var req=idx.getAll(IDBKeyRange.only(id));
+                        req.onsuccess=function(e){
+                            var list=e.target.result.sort(function(a,b){return b.checkInDate>a.checkInDate?1:-1});
+                            var html=list.length?list.map(function(c){return'<div class="history-item"><span>'+c.checkInDate+'</span></div>'}).join(''):'<div class="history-item"><span>暂无签到记录</span></div>';
+                            modal(r.name+' - 签到历史','<div class="history-panel">'+html+'</div>');
+                        };
+                    });
+                });
+                break;
+            case 'delete':
+                getRoom(id,function(r){
+                    if(confirm('确定要删除房间 "'+r.name+'" 吗？')){
+                        tx(['rooms','checkins'],'readwrite',function(t){
+                            store(t,'rooms').delete(id);
+                            var idx=store(t,'checkins').index('roomId');
+                            var req=idx.getAllKeys(IDBKeyRange.only(id));
+                            req.onsuccess=function(e){
+                                e.target.result.forEach(function(k){store(t,'checkins').delete(k)});
+                                selectedIds.delete(id);
+                                toast('删除成功','success');
+                                loadAll();
+                            };
+                        });
+                    }
+                });
+                break;
+        }
+    }
+
+    function getRoom(id,cb){
+        tx(['rooms'],'readonly',function(t){
+            store(t,'rooms').get(id).onsuccess=function(e){cb(e.target.result)};
+        });
+    }
+
+    function updateRoom(id,data,cb){
+        tx(['rooms'],'readwrite',function(t){
+            var rs=store(t,'rooms');
+            rs.get(id).onsuccess=function(e){
+                var r=Object.assign(e.target.result,data);
+                rs.put(r).onsuccess=function(){if(cb)cb()};
+            };
+        });
+    }
+
+    function modal(title,content,onOk,okTxt){
+        okTxt=okTxt||'确定';
+        var f=onOk?'<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" id="mOk">'+okTxt+'</button></div>':'';
+        document.getElementById('modalContent').innerHTML=
+            '<div class="modal-header"><h3>'+title+'</h3><button class="modal-close" onclick="closeModal()">&times;</button></div>'+
+            '<div class="modal-body">'+content+'</div>'+f;
+        document.getElementById('modalOverlay').classList.add('show');
+        if(onOk)document.getElementById('mOk').onclick=onOk;
+    }
+
+    function closeModal(){document.getElementById('modalOverlay').classList.remove('show')}
+
+    document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal()});
+
+    function toast(msg,type){
+        var t=document.getElementById('toast');
+        t.textContent=msg;t.className='toast'+(type?' '+type:'');
+        t.classList.add('show');
+        setTimeout(function(){t.classList.remove('show')},3000);
+    }
+
+    function openAddRoom(){
+        modal('新增房间',
+            '<div class="form-group"><label>房间名称</label><input id="rName" placeholder="请输入房间名称"></div>'+
+            '<div class="form-group"><label>签到人</label><input id="rSigner" placeholder="请输入签到人"></div>',
+            function(){
+                var n=document.getElementById('rName').value.trim();
+                var s=document.getElementById('rSigner').value.trim()||'未指定';
+                if(!n){toast('请输入房间名称','error');return}
+                tx(['rooms'],'readonly',function(t){
+                    var idx=store(t,'rooms').index('name');
+                    var ex=idx.get(n);
+                    ex.onsuccess=function(){
+                        if(ex.result){toast('房间名称已存在','error');return}
+                        var roomId=genId();
+                        tx(['rooms','checkins'],'readwrite',function(t2){
+                            var r={id:roomId,name:n,signer:s,createdAt:Date.now()};
+                            store(t2,'rooms').add(r);
+                            var c={id:genId(),roomId:roomId,checkInDate:today(),createdAt:Date.now()};
+                            store(t2,'checkins').add(c);
+                        }).onsuccess=function(){
+                            toast('房间创建成功','success');
+                            closeModal();
+                            loadAll();
+                        };
+                    };
+                });
+            });
+    }
+
+    function openBatchSign(){
+        if(!selectedIds.size){toast('请先选择房间','error');return}
+        modal('今日批量签到','<p>确定要为选中的 <strong>'+selectedIds.size+'</strong> 个房间进行今日签到吗？</p>',
+            function(){
+                var td=today();
+                var promises=[];
+                selectedIds.forEach(function(id){
+                    promises.push(new Promise(function(res){
+                        tx(['checkins'],'readonly',function(t){
+                            var idx=store(t,'checkins').index('roomDate');
+                            var r=idx.get(IDBKeyRange.only([id,td]));
+                            r.onsuccess=function(){
+                                if(!r.result){
+                                    tx(['checkins'],'readwrite',function(t2){
+                                        store(t2,'checkins').add({id:genId(),roomId:id,checkInDate:td,createdAt:Date.now()}).onsuccess=function(){res()};
+                                    });
+                                }else{res()}
+                            };
+                        });
+                    }));
+                });
+                Promise.all(promises).then(function(){
+                    toast('批量签到完成','success');
+                    closeModal();
+                    loadAll();
+                });
+            });
+    }
+
+    function openBatchUndo(){
+        if(!selectedIds.size){toast('请先选择房间','error');return}
+        modal('今日批量撤销','<p>确定要撤销选中的 <strong>'+selectedIds.size+'</strong> 个房间的今日签到吗？</p>',
+            function(){
+                var td=today();
+                var promises=[];
+                selectedIds.forEach(function(id){
+                    promises.push(new Promise(function(res){
+                        tx(['checkins'],'readonly',function(t){
+                            var idx=store(t,'checkins').index('roomDate');
+                            var r=idx.get(IDBKeyRange.only([id,td]));
+                            r.onsuccess=function(){
+                                if(r.result){
+                                    tx(['checkins'],'readwrite',function(t2){
+                                        store(t2,'checkins').delete(r.result.id).onsuccess=function(){res()};
+                                    });
+                                }else{res()}
+                            };
+                        });
+                    }));
+                });
+                Promise.all(promises).then(function(){
+                    toast('批量撤销完成','success');
+                    closeModal();
+                    loadAll();
+                });
+            });
+    }
+
+    function openBatchChangeSigner(){
+        if(!selectedIds.size){toast('请先选择房间','error');return}
+        modal('批量修改签到人','<div class="form-group"><label>新签到人</label><input id="bs" placeholder="请输入新签到人"></div>',
+            function(){
+                var v=document.getElementById('bs').value.trim();
+                if(!v){toast('请输入签到人','error');return}
+                var promises=[];
+                selectedIds.forEach(function(id){promises.push(new Promise(function(res){
+                    updateRoom(id,{signer:v},res);
+                }))});
+                Promise.all(promises).then(function(){
+                    toast('批量修改完成','success');
+                    closeModal();
+                    loadAll();
+                });
+            });
+    }
+
+    function openBatchHistory(){
+        if(!selectedIds.size){toast('请先选择房间','error');return}
+        modal('批量设置历史签到',
+            '<div class="form-group"><label>开始日期</label><input type="date" id="hStart"></div>'+
+            '<div class="form-group"><label>结束日期</label><input type="date" id="hEnd"></div>'+
+            '<p style="font-size:12px;color:var(--text-light);margin-top:8px;">将为选中房间在指定日期范围内每日创建一条签到记录</p>',
+            function(){
+                var s=document.getElementById('hStart').value;
+                var e=document.getElementById('hEnd').value;
+                if(!s||!e){toast('请选择日期范围','error');return}
+                var cur=new Date(s),end=new Date(e),cnt=0,promises=[];
+                while(cur<=end){
+                    var ds=fmtDate(cur);
+                    selectedIds.forEach(function(id){
+                        promises.push(new Promise(function(res){
+                            tx(['checkins'],'readonly',function(t){
+                                var idx=store(t,'checkins').index('roomDate');
+                                var r=idx.get(IDBKeyRange.only([id,ds]));
+                                r.onsuccess=function(){
+                                    if(!r.result){
+                                        tx(['checkins'],'readwrite',function(t2){
+                                            store(t2,'checkins').add({id:genId(),roomId:id,checkInDate:ds,createdAt:Date.now()}).onsuccess=function(){cnt++;res()};
+                                        });
+                                    }else{res()}
+                                };
+                            });
+                        }));
+                    });
+                    cur.setDate(cur.getDate()+1);
+                }
+                Promise.all(promises).then(function(){
+                    toast('已创建 '+cnt+' 条签到记录','success');
+                    closeModal();
+                    loadAll();
+                });
+            });
+    }
+
+    function openQuickQuery(){
+        modal('快速查询签到',
+            '<div class="form-group"><label>选择日期</label><input type="date" id="qDate" value="'+today()+'"></div>'+
+            '<button class="btn btn-primary" onclick="doQuickQuery()" style="width:100%">查询</button>'+
+            '<div id="qResult" style="margin-top:16px"></div>');
+    }
+
+    window.doQuickQuery=function(){
+        var date=document.getElementById('qDate').value;
+        if(!date)return;
+        tx(['rooms','checkins'],'readonly',function(t){
+            var rs=store(t,'rooms');
+            var cs=store(t,'checkins');
+            var rooms=[],checkins=[];
+            rs.getAll().onsuccess=function(e){rooms=e.target.result;tryFinish()};
+            cs.getAll().onsuccess=function(e){checkins=e.target.result;tryFinish()};
+            function tryFinish(){
+                var checked={};
+                checkins.forEach(function(c){if(c.checkInDate===date)checked[c.roomId]=true});
+                var total=rooms.length,chks=Object.keys(checked).length,rate=total?Math.round(chks/total*100):0;
+                var rows=rooms.map(function(r){
+                    var isChk=!!checked[r.id];
+                    return'<tr><td>'+r.name+'</td><td>'+r.signer+'</td><td><button class="btn btn-sm '+(isChk?'btn-warning':'btn-success')+'" onclick="quickToggle(\''+r.id+'\',\''+date+'\',this)">'+(isChk?'撤销':'签到')+'</button></td></tr>';
+                }).join('');
+                document.getElementById('qResult').innerHTML=
+                    '<div style="margin-bottom:12px;padding:10px;background:#f1f5f9;border-radius:6px;font-size:13px;"><strong>'+date+'</strong> - 签到率: <strong>'+chks+'/'+total+'</strong> ('+rate+'%)</div>'+
+                    '<table style="width:100%;font-size:13px"><thead><tr><th>房间</th><th>签到人</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table>';
+            }
+        });
+    };
+
+    window.quickToggle=function(id,date,btn){
+        checkInByDate(id,date).then(function(added){
+            btn.className='btn btn-sm '+(added?'btn-warning':'btn-success');
+            btn.textContent=added?'撤销':'签到';
+            tx(['rooms','checkins'],'readonly',function(t){
+                var rooms=[],checkins=[];
+                store(t,'rooms').getAll().onsuccess=function(e){rooms=e.target.result;tryFinish()};
+                store(t,'checkins').getAll().onsuccess=function(e){checkins=e.target.result;tryFinish()};
+                function tryFinish(){
+                    var cnt=0;checkins.forEach(function(c){if(c.checkInDate===date)cnt++});
+                    var rate=rooms.length?Math.round(cnt/rooms.length*100):0;
+                    var sd=document.querySelector('#qResult > div');
+                    if(sd)sd.innerHTML='<strong>'+date+'</strong> - 签到率: <strong>'+cnt+'/'+rooms.length+'</strong> ('+rate+'%)';
+                }
+            });
+        });
+    };
+
+    function importCSV(event){
+        var file=event.target.files[0];
+        if(!file)return;
+        var reader=new FileReader();
+        reader.onload=function(e){
+            var text=e.target.result;
+            var lines=text.split(/\r?\n/).filter(function(l){return l.trim()});
+            if(!lines.length){toast('CSV文件为空','error');return}
+            var hasHeader=confirm('检测到CSV文件，是否将第一行作为表头跳过？');
+            var start=hasHeader?1:0;
+            var suc=0,fail=0,promises=[];
+            for(var i=start;i<lines.length;i++){
+                var cols=lines[i].split(',').map(function(c){return c.trim().replace(/^"|"$/g,'')});
+                var n=cols[0]||'',s=cols[1]||'未指定';
+                if(!n)continue;
+                (function(name,signer){
+                    promises.push(new Promise(function(res){
+                        tx(['rooms'],'readonly',function(t){
+                            var idx=store(t,'rooms').index('name');
+                            var ex=idx.get(name);
+                            ex.onsuccess=function(){
+                                if(ex.result){fail++;res()}
+                                var rid=genId();
+                                tx(['rooms','checkins'],'readwrite',function(t2){
+                                    store(t2,'rooms').add({id:rid,name:name,signer:signer,createdAt:Date.now()});
+                                    store(t2,'checkins').add({id:genId(),roomId:rid,checkInDate:today(),createdAt:Date.now()}).onsuccess=function(){suc++;res()};
+                                });
+                            };
+                        });
+                    }));
+                })(n,s);
+            }
+            Promise.all(promises).then(function(){
+                toast('导入完成: 成功 '+suc+', 失败 '+fail,fail?'error':'success');
+                loadAll();
+            });
+        };
+        reader.readAsText(file);
+        event.target.value='';
+    }
+
+    function exportCSV(type){
+        if(type==='rooms'){
+            var csv='\uFEFF房间名称,签到人,状态,距下次签到,下次签到日,最后签到,创建时间\n';
+            currentRooms.forEach(function(r){
+                csv+='"'+r.name+'","'+r.signer+'","'+r.txt+'","'+(r.daysUntil>=0?r.daysUntil+'天':'逾期'+Math.abs(r.daysUntil)+'天')+'","'+r.nextDate+'","'+(r.lastCheckIn||'-')+'","'+fmtDate(new Date(r.createdAt))+'"\n';
+            });
+            dlFile(csv,'房间状态表_'+today()+'.csv','text/csv;charset=utf-8');
+            toast('房间状态表导出成功','success');
+        }else if(type==='checkins'){
+            tx(['rooms','checkins'],'readonly',function(t){
+                var rooms=[],checkins=[];
+                store(t,'rooms').getAll().onsuccess=function(e){rooms=e.target.result;tryFinish()};
+                store(t,'checkins').getAll().onsuccess=function(e){checkins=e.target.result;tryFinish()};
+                function tryFinish(){
+                    var rm={};rooms.forEach(function(r){rm[r.id]=r});
+                    var csv='\uFEFF房间名称,签到人,签到日期,记录时间\n';
+                    checkins.sort(function(a,b){return b.checkInDate>a.checkInDate?1:-1}).forEach(function(c){
+                        var r=rm[c.roomId]||{name:'已删除',signer:'-'};
+                        csv+='"'+r.name+'","'+r.signer+'","'+c.checkInDate+'","'+fmtDate(new Date(c.createdAt))+'"\n';
+                    });
+                    dlFile(csv,'签到明细_'+today()+'.csv','text/csv;charset=utf-8');
+                    toast('签到明细导出成功','success');
+                }
+            });
+        }
+    }
+
+    function dlFile(content,fname,mime){
+        var b=new Blob([content],{type:mime});
+        var u=URL.createObjectURL(b);
+        var a=document.createElement('a');
+        a.href=u;a.download=fname;a.click();
+        URL.revokeObjectURL(u);
+    }
+
+    var app={
+        exportBackup:function(){
+            tx(['rooms','checkins'],'readonly',function(t){
+                var rooms=[],checkins=[];
+                store(t,'rooms').getAll().onsuccess=function(e){rooms=e.target.result;tryFinish()};
+                store(t,'checkins').getAll().onsuccess=function(e){checkins=e.target.result;tryFinish()};
+                function tryFinish(){
+                    var backup={rooms:rooms,checkins:checkins,exportedAt:Date.now()};
+                    dlFile(JSON.stringify(backup,null,2),'签到备份_'+today()+'.json','application/json');
+                    toast('备份导出成功','success');
+                }
+            });
+        },
+        importBackup:function(event){
+            var file=event.target.files[0];
+            if(!file)return;
+            var reader=new FileReader();
+            reader.onload=function(e){
+                try{
+                    var bak=JSON.parse(e.target.result);
+                    if(!bak.rooms||!bak.checkins)throw new Error('无效的备份文件格式');
+                    if(!confirm('确定要恢复备份吗？\n将导入 '+bak.rooms.length+' 个房间和 '+bak.checkins.length+' 条签到记录\n\n注意：这将替换现有数据！'))return;
+                    tx(['rooms','checkins'],'readwrite',function(t){
+                        store(t,'rooms').clear();
+                        store(t,'checkins').clear();
+                    }).onsuccess=function(){
+                        tx(['rooms','checkins'],'readwrite',function(t){
+                            bak.rooms.forEach(function(r){store(t,'rooms').add(r)});
+                            bak.checkins.forEach(function(c){store(t,'checkins').add(c)});
+                        }).onsuccess=function(){
+                            selectedIds.clear();
+                            toast('备份恢复成功','success');
+                            loadAll();
+                        };
+                    };
+                }catch(err){
+                    toast('恢复失败: '+err.message,'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value='';
+        }
+    };
+
+    initDB().then(function(){loadAll()}).catch(function(e){console.error(e);toast('数据库初始化失败','error')});
+    window._app=app;
+})();
+</script>
+</body>
+</html>
